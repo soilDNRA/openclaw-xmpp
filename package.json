@@ -1,0 +1,88 @@
+{
+  "name": "openclaw-xmpp",
+  "version": "0.1.2-beta.2",
+  "description": "Native XMPP direct-message channel plugin for OpenClaw.",
+  "keywords": [
+    "openclaw",
+    "xmpp",
+    "jabber",
+    "channel",
+    "plugin"
+  ],
+  "type": "module",
+  "private": true,
+  "license": "GPL-3.0-or-later",
+  "repository": {
+    "type": "git",
+    "url": "git+https://git.sdf.org/erici/openclaw-xmpp.git"
+  },
+  "homepage": "https://git.sdf.org/erici/openclaw-xmpp",
+  "bugs": {
+    "url": "https://git.sdf.org/erici/openclaw-xmpp/issues"
+  },
+  "engines": {
+    "node": ">=22.22.3"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "clean": "node scripts/clean.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "pack:check": "npm pack --dry-run",
+    "verify": "npm run clean && npm run typecheck && npm test && npm run build && npm run pack:check"
+  },
+  "dependencies": {
+    "@openclaw/fs-safe": "0.5.6",
+    "@xmpp/client": "0.14.0",
+    "@xmpp/xml": "0.14.0"
+  },
+  "peerDependencies": {
+    "openclaw": ">=2026.8.2"
+  },
+  "peerDependenciesMeta": {
+    "openclaw": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/node": "24.10.1",
+    "@types/xmpp__client": "0.14.1",
+    "@types/xmpp__xml": "0.13.5",
+    "openclaw": "2026.8.2",
+    "typescript": "5.9.3",
+    "vitest": "4.1.11"
+  },
+  "overrides": {
+    "nanoid": "3.3.18",
+    "vitest": "4.1.11"
+  },
+  "openclaw": {
+    "extensions": [
+      "./dist/index.js"
+    ],
+    "setupEntry": "./dist/setup-entry.js",
+    "compat": {
+      "pluginApi": ">=2026.8.2",
+      "minGatewayVersion": "2026.8.2"
+    },
+    "build": {
+      "openclawVersion": "2026.8.2",
+      "pluginSdkVersion": "2026.8.2"
+    },
+    "runtimeExtensions": [
+      "./dist/index.js"
+    ],
+    "runtimeSetupEntry": "./dist/setup-entry.js"
+  },
+  "files": [
+    "dist/**",
+    "openclaw.plugin.json",
+    "README.md",
+    "LICENSE",
+    "THIRD_PARTY_NOTICES.md",
+    "SECURITY.md",
+    "CONTRIBUTING.md",
+    "CHANGELOG.md"
+  ]
+}

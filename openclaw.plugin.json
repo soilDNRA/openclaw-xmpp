@@ -1,0 +1,292 @@
+{
+  "id": "xmpp",
+  "name": "XMPP",
+  "description": "Native XMPP direct-message channel for OpenClaw.",
+  "version": "0.1.2-beta.2",
+  "activation": {
+    "onStartup": false
+  },
+  "channels": [
+    "xmpp"
+  ],
+  "channelEnvVars": {
+    "xmpp": [
+      "XMPP_JID",
+      "XMPP_PASSWORD",
+      "XMPP_SERVICE",
+      "XMPP_WEBSOCKET_URL"
+    ]
+  },
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {}
+  },
+  "channelConfigs": {
+    "xmpp": {
+      "schema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "name": {
+            "type": "string"
+          },
+          "defaultAccount": {
+            "type": "string"
+          },
+          "jid": {
+            "type": "string"
+          },
+          "password": {
+            "$ref": "#/definitions/secretInput"
+          },
+          "resource": {
+            "type": "string"
+          },
+          "service": {
+            "type": "string"
+          },
+          "websocketUrl": {
+            "type": "string"
+          },
+          "dmPolicy": {
+            "type": "string",
+            "enum": [
+              "pairing",
+              "allowlist",
+              "open",
+              "disabled"
+            ]
+          },
+          "allowFrom": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "sendReceipts": {
+            "type": "boolean"
+          },
+          "requestReceipts": {
+            "type": "boolean"
+          },
+          "sendChatStates": {
+            "type": "boolean"
+          },
+          "textChunkLimit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100000
+          },
+          "mediaMaxMb": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 100
+          },
+          "healthProbe": { "type": "boolean" },
+          "healthProbeIntervalSeconds": { "type": "number", "minimum": 30, "maximum": 3600 },
+          "healthProbeTimeoutSeconds": { "type": "number", "minimum": 5, "maximum": 60 },
+          "reconnectDelaySeconds": { "type": "number", "minimum": 1, "maximum": 60 },
+          "dm": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "sessionScope": {
+                "type": "string",
+                "enum": ["per-user", "per-channel-peer", "per-account-channel-peer"]
+              },
+              "threadReplies": {
+                "type": "string",
+                "enum": ["off", "inbound", "always"]
+              }
+            }
+          },
+          "threadBindings": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "enabled": { "type": "boolean" },
+              "idleHours": { "type": "number", "minimum": 0 },
+              "maxAgeHours": { "type": "number", "minimum": 0 },
+              "spawnSessions": { "type": "boolean" }
+            }
+          },
+          "accounts": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$"
+            },
+            "additionalProperties": {
+              "$ref": "#/definitions/account"
+            }
+          }
+        },
+        "definitions": {
+          "secretInput": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "object",
+                "required": [
+                  "source",
+                  "provider",
+                  "id"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "source": {
+                    "type": "string",
+                    "enum": [
+                      "env",
+                      "file",
+                      "exec"
+                    ]
+                  },
+                  "provider": {
+                    "type": "string",
+                    "pattern": "^[a-z][a-z0-9_-]{0,63}$"
+                  },
+                  "id": {
+                    "type": "string"
+                  }
+                }
+              }
+            ]
+          },
+          "account": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "enabled": {
+                "type": "boolean"
+              },
+              "name": {
+                "type": "string"
+              },
+              "jid": {
+                "type": "string"
+              },
+              "password": {
+                "$ref": "#/definitions/secretInput"
+              },
+              "resource": {
+                "type": "string"
+              },
+              "service": {
+                "type": "string"
+              },
+              "websocketUrl": {
+                "type": "string"
+              },
+              "dmPolicy": {
+                "type": "string",
+                "enum": [
+                  "pairing",
+                  "allowlist",
+                  "open",
+                  "disabled"
+                ]
+              },
+              "allowFrom": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "sendReceipts": {
+                "type": "boolean"
+              },
+              "requestReceipts": {
+                "type": "boolean"
+              },
+              "sendChatStates": {
+                "type": "boolean"
+              },
+              "textChunkLimit": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "mediaMaxMb": {
+                "type": "number",
+                "minimum": 1,
+                "maximum": 100
+              },
+              "healthProbe": { "type": "boolean" },
+              "healthProbeIntervalSeconds": { "type": "number", "minimum": 30, "maximum": 3600 },
+              "healthProbeTimeoutSeconds": { "type": "number", "minimum": 5, "maximum": 60 },
+              "reconnectDelaySeconds": { "type": "number", "minimum": 1, "maximum": 60 },
+              "dm": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "sessionScope": {
+                    "type": "string",
+                    "enum": ["per-user", "per-channel-peer", "per-account-channel-peer"]
+                  },
+                  "threadReplies": {
+                    "type": "string",
+                    "enum": ["off", "inbound", "always"]
+                  }
+                }
+              },
+              "threadBindings": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "enabled": { "type": "boolean" },
+                  "idleHours": { "type": "number", "minimum": 0 },
+                  "maxAgeHours": { "type": "number", "minimum": 0 },
+                  "spawnSessions": { "type": "boolean" }
+                }
+              }
+            }
+          }
+        }
+      },
+      "uiHints": {
+        "dm.sessionScope": {
+          "label": "XMPP DM Session Scope",
+          "help": "Controls how direct messages from the same peer are routed to OpenClaw sessions (per-channel-peer recommended for continuity)."
+        },
+        "dm.threadReplies": {
+          "label": "XMPP Thread Replies",
+          "help": "How inbound replies are presented to the model."
+        },
+        "threadBindings.enabled": {
+          "label": "XMPP Thread Bindings Enabled"
+        },
+        "jid": {
+          "label": "XMPP JID",
+          "placeholder": "bot@example.org"
+        },
+        "password": {
+          "label": "Password",
+          "sensitive": true
+        },
+        "service": {
+          "label": "XMPP service",
+          "placeholder": "xmpps://xmpp.example.org:5223"
+        },
+        "websocketUrl": {
+          "label": "WebSocket URL",
+          "placeholder": "wss://xmpp.example.org/xmpp-websocket"
+        },
+        "allowFrom": {
+          "label": "Allowed bare JIDs"
+        },
+        "textChunkLimit": {
+          "label": "Outbound text chunk size",
+          "help": "Maximum characters per outbound message (default: 4000)."
+        }
+      }
+    }
+  }
+}
