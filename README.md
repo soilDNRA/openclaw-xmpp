@@ -10,12 +10,16 @@ The canonical source repository is
 is a clearly labelled one-way GitHub mirror that points back to SDF as the
 source of truth. Eric is the initial maintainer.
 
-This project is pre-release. Its reviewed source is public for inspection and
-early testing, but the npm package remains marked `private` and there is no
-ClawHub or stable package release. Those distribution steps remain gated on
-the remaining beta-release checks and separate owner approval. Core
-interoperability has been exercised against both Prosody and ejabberd, and
-with Conversations and Gajim clients.
+This project is pre-release. Version `0.1.2-beta.2` is available through
+ClawHub for explicit beta testing; there is no stable/default release yet.
+Install the reviewed beta explicitly with:
+
+```bash
+openclaw plugins install clawhub:openclaw-xmpp@0.1.2-beta.2
+```
+
+Core interoperability has been exercised against both Prosody and ejabberd,
+and with Conversations and Gajim clients.
 
 The durable project goal, status, decisions, and roadmap are maintained in
 [`PROJECT.md`](./PROJECT.md).

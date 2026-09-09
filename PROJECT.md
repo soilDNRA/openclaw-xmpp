@@ -1,8 +1,8 @@
 # OpenClaw XMPP Project Plan
 
-Last updated: 2026-09-05 (public prerelease source publication)
+Last updated: 2026-09-10 (ClawHub beta publication)
 
-Status: active, public source prerelease and live soak-test phases
+Status: active, published ClawHub beta and live soak-test phases
 
 This document is the durable source of truth for the OpenClaw XMPP project.
 Consult it before planning or undertaking substantial project work, and update
@@ -48,7 +48,7 @@ and maintained.
 
 Repository: `projects/openclaw-xmpp`
 
-Package: `openclaw-xmpp` version `0.1.2-beta.2` (release candidate)
+Package: `openclaw-xmpp` version `0.1.2-beta.2` (published ClawHub beta)
 
 Current OpenClaw development baseline: `2026.8.2`
 
@@ -937,9 +937,12 @@ Checklist:
   private local history.
 - [x] Create a clearly labelled one-way GitHub mirror whose README and package
   metadata identify SDF Gitea as canonical.
-- [ ] Publish signed/tagged source releases and changelog.
-- [ ] Publish the approved package.
-- [ ] Submit to ClawHub and verify search/install/update behaviour.
+- [x] Publish the signed/tagged `v0.1.2-beta.2` source release and changelog.
+- [x] Publish the approved `openclaw-xmpp@0.1.2-beta.2` package.
+- [x] Submit to ClawHub and verify exact-version discovery, download,
+  installation, update, and uninstall behaviour. The beta is intentionally
+  tagged `beta`, not `latest`; unqualified search/default installation remains
+  a stable-release promotion gate.
 - [x] Document supported features and explicit non-features accurately.
 - [x] Enable the approved private security-reporting route and verify it from
   a non-maintainer's perspective; keep the compatibility policy current.
