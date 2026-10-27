@@ -12,12 +12,12 @@ source of truth. Eric is the initial maintainer.
 
 This project is pre-release. The source tree is `0.1.2-beta.6`, including
 opt-in legacy OMEMO, trusted-device delivery and a stale-parser crash guard.
-The latest published ClawHub package is still `0.1.2-beta.2`; there is no
-stable/default release yet. Source updates do not publish a package release.
+The ClawHub beta release is `0.1.2-beta.6`; there is no stable/default release
+yet. Releases remain on the explicit `beta` tag.
 Install the reviewed beta explicitly with:
 
 ```bash
-openclaw plugins install clawhub:openclaw-xmpp@0.1.2-beta.2
+openclaw plugins install clawhub:openclaw-xmpp@0.1.2-beta.6
 ```
 
 Core interoperability has been exercised against both Prosody and ejabberd,
@@ -45,9 +45,9 @@ The durable project goal, status, decisions, and roadmap are maintained in
   fallback media stanza so Conversations renders supported files inline
 
 MUC/group chats, reactions, edits, retractions, and inbound file downloads
-are not supported. The published beta.2 has no OMEMO support. Current source
-provides explicitly opt-in legacy OMEMO with manual trust controls; OMEMO 2
-has no independent live-client interoperability proof and is experimental.
+are not supported. Beta.6 provides explicitly opt-in legacy OMEMO with manual
+trust controls. OMEMO 2 has no independent live-client interoperability proof
+and is experimental.
 
 ## Development
 

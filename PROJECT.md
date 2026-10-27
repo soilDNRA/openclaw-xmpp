@@ -5,7 +5,7 @@ Updated: 2026-10-28
 ## Source and releases
 
 - Current source: `openclaw-xmpp@0.1.2-beta.6`.
-- Published ClawHub package: `0.1.2-beta.2`, explicit `beta` channel only.
+- ClawHub beta release: `0.1.2-beta.6`, explicit `beta` channel only.
 - Canonical repository: <https://git.sdf.org/erici/openclaw-xmpp>.
 - One-way mirror: <https://github.com/soilDNRA/openclaw-xmpp>.
 - License: GPL-3.0-or-later. Initial maintainer: Eric (`soilDNRA`).
@@ -14,8 +14,8 @@ The beta.6 source includes off-by-default OMEMO, manual fingerprint review,
 owner-gated identity/device lifecycle, explicit trusted-device delivery,
 scoped expiring review approvals, separate delivery diagnostics, and a
 stale-parser crash guard. See README.md, SECURITY.md, OMEMO-TRUST-UX.md and
-CHANGELOG.md. Publishing this source does not publish a package, create a
-release tag, change the beta channel, or deploy anything.
+CHANGELOG.md. The beta.6 package release uses the explicit `beta` tag only;
+there is no stable/default promotion or production deployment.
 
 ## Evidence and limits
 
@@ -39,7 +39,7 @@ The production dependency audit reported zero known vulnerabilities.
 ## Roadmap
 
 1. Maintain deterministic security, trust, recovery, parser and package tests.
-2. Review a separately versioned package candidate before any new release.
+2. Keep each package candidate reviewed and source-linked before publication.
 3. Extend independent OMEMO 2 interoperability only with a suitable client.
 4. Gather beta feedback and evaluate consolidation with existing XMPP work.
 5. Pursue official external-channel discovery without claiming endorsement.

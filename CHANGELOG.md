@@ -1,14 +1,13 @@
 # Changelog
 
-## Unreleased
+## 0.1.2-beta.6 - 2026-10-28
 
-- Synchronize the beta.6 source and operator documentation. The published
-  ClawHub package remains beta.2; this source update creates no package release.
+- Publish the reviewed beta.6 package through ClawHub under the explicit `beta`
+  tag. Legacy OMEMO is opt-in; independent OMEMO 2 interoperability remains
+  unproven. No stable/default promotion is included.
 - Guard xmpp.js against socket data arriving after parser teardown, preventing
   an uncaught null-parser error. Install the idempotent guard at plugin load
   so dependency reinstalls cannot remove the fix; add regression coverage.
-
-## 0.1.2-beta.6 - 2026-10-08 (source; package not published)
 
 - Add explicit `omemo.deliveryPolicy: "trusted-devices"`: exclude undecided,
   distrusted, retired and missing-bundle devices while requiring a trusted
