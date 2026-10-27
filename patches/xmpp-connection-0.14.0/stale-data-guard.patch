@@ -1,0 +1,13 @@
+--- a/node_modules/@xmpp/connection/index.js
++++ b/node_modules/@xmpp/connection/index.js
+@@ -48,6 +48,12 @@
+   _onData(data) {
++    // OPENCLAW PATCH (2026-10-19): guard against socket "data" arriving after
++    // parser detach (stream error, stop, or see-other-host). Fixes uncaught
++    // TypeError "Cannot read properties of null (reading 'write')" which
++    // can terminate the hosting process. Stale data on
++    // a torn-down stream is dropped; protocol errors are unaffected.
++    if (!this.parser) return;
+     const str = data.toString("utf8");
+     this.parser.write(str);
+   }

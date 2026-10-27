@@ -1,5 +1,68 @@
 # Changelog
 
+## Unreleased
+
+- Synchronize the beta.6 source and operator documentation. The published
+  ClawHub package remains beta.2; this source update creates no package release.
+- Guard xmpp.js against socket data arriving after parser teardown, preventing
+  an uncaught null-parser error. Install the idempotent guard at plugin load
+  so dependency reinstalls cannot remove the fix; add regression coverage.
+
+## 0.1.2-beta.6 - 2026-10-08 (source; package not published)
+
+- Add explicit `omemo.deliveryPolicy: "trusted-devices"`: exclude undecided,
+  distrusted, retired and missing-bundle devices while requiring a trusted
+  recipient device. Preserve `strict-all` as the default and fail closed on
+  changed identities, corrupt state and transactional trust revocation.
+- Track delivery health separately from connection/probe health; clear typing
+  after failed encrypted sends and include rate-limited encrypted review notices.
+- Add owner review/short-code approval and authenticated admin review/approval
+  RPCs. Codes expire after ten minutes, are single-use and reviewer/account/key
+  bound; approval grants `trusted`, never `verified`. In-band XMPP short-code
+  approval remains disabled without authenticated sender-device provenance.
+
+## 0.1.2-beta.5 - 2026-09-18
+
+- Accept payload-free legacy OMEMO key-transport stanzas, committing their
+  ratchet and prekey changes without dispatching an empty chat message, and
+  recover committed transports safely after a crash.
+- Accept encrypted messages without an outer `message@id`: prefer XEP-0359
+  stanza/origin IDs and otherwise derive a deterministic replay key from the
+  authenticated sender and exact encrypted element. Consume every encrypted
+  stanza through the OMEMO handler, including transports with no chat payload.
+
+## 0.1.2-beta.4 - 2026-09-18
+
+- Prepare the unpublished `0.1.2-beta.4` activation candidate. Require the
+  `operator.admin` scope on the owner-only OMEMO operator command so OpenClaw
+  2026.9.4 can authorize configured chat owners and expose trusted owner status
+  to the external plugin handler. Keep the handler's explicit fail-closed
+  owner check.
+
+- Prepare the unpublished `0.1.2-beta.3` legacy OMEMO activation candidate.
+  Exercise manual fingerprint approval, real maintained-fork encrypted
+  delivery, exact-device retirement, restart-safe suppression, byte-identical
+  bundle restoration, and encrypted delivery after rollback in one isolated
+  end-to-end test.
+
+- Assemble the inactive OMEMO engine, PEP discovery, remote-session creation,
+  transactional send/receive, and durable inbox/outbox recovery behind an
+  explicit off-by-default account switch and injected maintained-library
+  bindings. Reject plaintext message/media fallback while active.
+- Add mocked two-account end-to-end and restart tests, including an actual
+  maintained-fork encrypted round trip and byte-exact committed-ciphertext
+  replay without repeating ratchet encryption.
+- Harden the inactive OMEMO boundary so full reconnects and XEP-0198 resumes
+  recover committed deliveries before returning online, only the configured
+  profile is advertised, non-DM encrypted message types fail before ratchet
+  use, and foreign PEP events cannot trigger local reannouncement.
+- Add an owner-gated OMEMO operator command for fingerprint inspection, exact
+  compare-and-set trust changes, distrust/retirement, guarded identity
+  replacement, and exact-device activation or retirement. Persist retirement
+  before PEP mutation, recover interrupted retirement before presence, refuse
+  sends while retired, and prevent reconnect or self-PEP events from silently
+  restoring a retired device.
+
 ## 0.1.2-beta.2 - 2026-09-10
 
 - Add a bounded, configurable XEP-0199 probe on the existing authenticated

@@ -31,6 +31,7 @@ import {
   type XmppTransportStatus
 } from "./transport.js";
 import { xmppSetupWizard } from "./setup.js";
+import { createProductionOmemoSession } from "./omemo/factory.js";
 
 function resolveAccountId(cfg: OpenClawConfig, accountId?: string | null): string {
   return accountId ?? resolveDefaultXmppAccountId(cfg);
@@ -230,6 +231,12 @@ function statusSnapshot(
       ? { lastOutboundAt: status.lastOutboundAt }
       : {}),
     ...(status?.lastError ? { lastError: status.lastError } : {}),
+    ...(status?.deliveryState ? { deliveryState: status.deliveryState,
+      lastDeliveryError: status.lastDeliveryError,
+      lastDeliveryFailureAt: status.lastDeliveryFailureAt,
+      excludedDeviceCount: status.excludedDeviceCount,
+      pendingDeviceCount: status.pendingDeviceCount,
+      omemoReviewMethod: "xmpp.omemo.review" } : {}),
     ...(status?.phase ? { phase: status.phase } : {}),
     ...(status?.reconnectAttempts !== undefined
       ? { reconnectAttempts: status.reconnectAttempts }
@@ -316,6 +323,15 @@ const basePlugin: Omit<
   message: xmppMessageAdapter,
   actions: xmppMessageActions,
   status: {
+    collectStatusIssues: (accounts) => accounts.flatMap((account) => {
+      const status = account as unknown as XmppTransportStatus;
+      if (status.deliveryState !== "blocked" && status.deliveryState !== "degraded") return [];
+      return [{ channel: "xmpp", accountId: account.accountId, kind: "runtime" as const,
+        message: status.deliveryState === "blocked"
+          ? `Encrypted delivery blocked: ${status.lastDeliveryError ?? "review OMEMO devices"}`
+          : `Encrypted delivery excludes ${status.excludedDeviceCount ?? 0} device(s); ${status.pendingDeviceCount ?? 0} awaiting approval.`,
+        fix: "Review devices using xmpp.omemo.review in the authenticated admin interface or /xmpp-omemo review <account> on an authenticated owner channel." }];
+    }),
     defaultRuntime: {
       accountId: "default",
       running: false,
@@ -369,7 +385,13 @@ const basePlugin: Omit<
             }
           });
         }
-      });
+      }, connection.omemo?.enabled ? {
+        omemoSessionFactory: (iq) => createProductionOmemoSession({
+          config: connection,
+          stateRoot: pluginRuntime.state.resolveStateDir(process.env),
+          iq
+        })
+      } : {});
       const unregister = registerLiveTransport(ctx.accountId, transport);
       ctx.setStatus(statusSnapshot(ctx.account, transport.status));
       try {
@@ -388,6 +410,9 @@ const basePlugin: Omit<
       const transport = getLiveTransport(resolvedId);
       if (!transport?.status.connected) {
         return { ok: false, reason: "not connected" };
+      }
+      if (transport.status.deliveryState === "blocked") {
+        return { ok: false, reason: "connected but encrypted delivery is blocked; review OMEMO devices" };
       }
       if (!transport.config.healthProbe) {
         return { ok: true, reason: "connected; health probe disabled" };

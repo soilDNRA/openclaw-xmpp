@@ -38,6 +38,29 @@ uses a fresh implementation rather than their source.
 | XEP-0444 reactions | `src/actions.ts`, `src/actions.test.ts`, and `src/xep0444.ts`; `a78b3e9ac2d718c48b225f5c1f03fe645ff99265`, `6b9c32c45c2a292984f4f67268ee3c7c76dadfec`, and `5d08db7c5b6d5ed50f29439ebfc032eeecfe05af` | None yet | Future protocol/product influence; no code carried into the baseline |
 | Replies, threads, and MUC shape | `src/channel.ts`, `src/client.ts`, and `src/types.ts` at `a78b3e9ac2d718c48b225f5c1f03fe645ff99265` through the reviewed heads | `PROJECT.md`; no baseline source destination | Requirements input only; replies require a new XEP-0461 investigation and MUC requires a new identity/security design |
 
+## OMEMO cryptographic dependency
+
+OMEMO development uses a project-maintained fork of `libomemo.js` 3.0.0 under
+GPL-3.0. The fork begins at upstream signed-tag commit
+`d5ba2a36abaa57662c27ac1c27c79cc1c3a8ada9`. Local commit
+`53b727c20550da10392f3cc5d18a7e60f995b759` adds the explicit `HEAPU8`
+runtime export needed by pinned Emscripten 6.0.9; commit `cf127f3` records the
+deterministic rebuilt generated module. The complete corresponding source and
+built distribution are public at
+<https://github.com/soilDNRA/libomemo.js-openclaw>. Annotated tag
+`v3.0.0-openclaw.2` peels to commit
+`a391ba31f376ba75c0f2dc5baedff3690354de62`; the plugin manifest pins that
+commit's archive with npm lockfile integrity
+`sha512-MxCEk0WVSe/MaTcqTGK/fdD95/v2GnmX+0KmW7LFuhJ9ewNhgm4QAbInfc0GcJCwDXYBUxIyKtNMjDXfxZMw7w==`.
+The immutable `.1` tag is superseded because its source archive did not contain
+the ignored `dist/` payload and was therefore not directly installable.
+
+The historical npm WebAssembly bytes are not used as the provenance boundary:
+upstream did not record their compiler version or publish npm provenance. A
+release must ship or link the exact corresponding fork source, patch, licence,
+build instructions, and immutable artefact hash. No `libomemo.js` source has
+been copied into this plugin tree; npm retrieves the exact commit archive.
+
 ## Rule for later adaptation
 
 For each future copied or closely adapted contribution, add the exact upstream

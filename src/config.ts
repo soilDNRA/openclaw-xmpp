@@ -33,6 +33,13 @@ export interface XmppThreadBindingsConfig {
   spawnSessions?: boolean;
 }
 
+export interface XmppOmemoConfig {
+  enabled?: boolean;
+  profile?: "legacy" | "omemo2";
+  trustMode?: "tofu" | "manual";
+  deliveryPolicy?: "strict-all" | "trusted-devices";
+}
+
 export interface XmppAccountConfig {
   enabled?: boolean;
   name?: string;
@@ -54,6 +61,7 @@ export interface XmppAccountConfig {
   reconnectDelaySeconds?: number;
   dm?: XmppDmConfig;
   threadBindings?: XmppThreadBindingsConfig;
+  omemo?: XmppOmemoConfig;
 }
 
 export interface XmppChannelConfig extends XmppAccountConfig {
@@ -83,6 +91,7 @@ export interface ResolvedXmppAccount {
   reconnectDelaySeconds: number;
   dm?: XmppDmConfig;
   threadBindings?: XmppThreadBindingsConfig;
+  omemo: { enabled: boolean; profile: "legacy" | "omemo2"; trustMode: "tofu" | "manual"; deliveryPolicy?: "strict-all" | "trusted-devices" };
 }
 
 export interface XmppConnectionConfig {
@@ -103,6 +112,7 @@ export interface XmppConnectionConfig {
   healthProbeIntervalMs: number;
   healthProbeTimeoutMs: number;
   reconnectDelayMs: number;
+  omemo?: { enabled: boolean; profile: "legacy" | "omemo2"; trustMode: "tofu" | "manual"; deliveryPolicy?: "strict-all" | "trusted-devices" };
 }
 
 type ConfigWithChannels = OpenClawConfig & {
@@ -246,7 +256,13 @@ export function resolveXmppAccount(
       60
     ),
     ...(raw.dm ? { dm: raw.dm } : {}),
-    ...(raw.threadBindings ? { threadBindings: raw.threadBindings } : {})
+    ...(raw.threadBindings ? { threadBindings: raw.threadBindings } : {}),
+    omemo: {
+      enabled: raw.omemo?.enabled === true,
+      profile: raw.omemo?.profile ?? "legacy",
+      trustMode: raw.omemo?.trustMode ?? "manual",
+      deliveryPolicy: raw.omemo?.deliveryPolicy ?? "strict-all"
+    }
   };
 }
 
@@ -326,7 +342,8 @@ export async function resolveXmppConnectionConfig(
     healthProbe: account.healthProbe,
     healthProbeIntervalMs: Math.floor(account.healthProbeIntervalSeconds * 1000),
     healthProbeTimeoutMs: Math.floor(account.healthProbeTimeoutSeconds * 1000),
-    reconnectDelayMs: Math.floor(account.reconnectDelaySeconds * 1000)
+    reconnectDelayMs: Math.floor(account.reconnectDelaySeconds * 1000),
+    omemo: account.omemo
   };
 }
 

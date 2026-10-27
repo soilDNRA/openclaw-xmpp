@@ -2,9 +2,12 @@
   "id": "xmpp",
   "name": "XMPP",
   "description": "Native XMPP direct-message channel for OpenClaw.",
-  "version": "0.1.2-beta.2",
+  "version": "0.1.2-beta.6",
   "activation": {
     "onStartup": false
+  },
+  "doctorContract": {
+    "stateMigrations": []
   },
   "channels": [
     "xmpp"
@@ -87,21 +90,74 @@
             "minimum": 1,
             "maximum": 100
           },
-          "healthProbe": { "type": "boolean" },
-          "healthProbeIntervalSeconds": { "type": "number", "minimum": 30, "maximum": 3600 },
-          "healthProbeTimeoutSeconds": { "type": "number", "minimum": 5, "maximum": 60 },
-          "reconnectDelaySeconds": { "type": "number", "minimum": 1, "maximum": 60 },
+          "healthProbe": {
+            "type": "boolean"
+          },
+          "healthProbeIntervalSeconds": {
+            "type": "number",
+            "minimum": 30,
+            "maximum": 3600
+          },
+          "healthProbeTimeoutSeconds": {
+            "type": "number",
+            "minimum": 5,
+            "maximum": 60
+          },
+          "reconnectDelaySeconds": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 60
+          },
+          "omemo": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "enabled": {
+                "type": "boolean"
+              },
+              "profile": {
+                "type": "string",
+                "enum": [
+                  "legacy",
+                  "omemo2"
+                ]
+              },
+              "trustMode": {
+                "type": "string",
+                "enum": [
+                  "tofu",
+                  "manual"
+                ]
+              },
+              "deliveryPolicy": {
+                "type": "string",
+                "enum": [
+                  "strict-all",
+                  "trusted-devices"
+                ],
+                "default": "strict-all"
+              }
+            }
+          },
           "dm": {
             "type": "object",
             "additionalProperties": false,
             "properties": {
               "sessionScope": {
                 "type": "string",
-                "enum": ["per-user", "per-channel-peer", "per-account-channel-peer"]
+                "enum": [
+                  "per-user",
+                  "per-channel-peer",
+                  "per-account-channel-peer"
+                ]
               },
               "threadReplies": {
                 "type": "string",
-                "enum": ["off", "inbound", "always"]
+                "enum": [
+                  "off",
+                  "inbound",
+                  "always"
+                ]
               }
             }
           },
@@ -109,10 +165,20 @@
             "type": "object",
             "additionalProperties": false,
             "properties": {
-              "enabled": { "type": "boolean" },
-              "idleHours": { "type": "number", "minimum": 0 },
-              "maxAgeHours": { "type": "number", "minimum": 0 },
-              "spawnSessions": { "type": "boolean" }
+              "enabled": {
+                "type": "boolean"
+              },
+              "idleHours": {
+                "type": "number",
+                "minimum": 0
+              },
+              "maxAgeHours": {
+                "type": "number",
+                "minimum": 0
+              },
+              "spawnSessions": {
+                "type": "boolean"
+              }
             }
           },
           "accounts": {
@@ -146,7 +212,8 @@
                     "enum": [
                       "env",
                       "file",
-                      "exec"
+                      "exec",
+                      "store"
                     ]
                   },
                   "provider": {
@@ -219,21 +286,74 @@
                 "minimum": 1,
                 "maximum": 100
               },
-              "healthProbe": { "type": "boolean" },
-              "healthProbeIntervalSeconds": { "type": "number", "minimum": 30, "maximum": 3600 },
-              "healthProbeTimeoutSeconds": { "type": "number", "minimum": 5, "maximum": 60 },
-              "reconnectDelaySeconds": { "type": "number", "minimum": 1, "maximum": 60 },
+              "healthProbe": {
+                "type": "boolean"
+              },
+              "healthProbeIntervalSeconds": {
+                "type": "number",
+                "minimum": 30,
+                "maximum": 3600
+              },
+              "healthProbeTimeoutSeconds": {
+                "type": "number",
+                "minimum": 5,
+                "maximum": 60
+              },
+              "reconnectDelaySeconds": {
+                "type": "number",
+                "minimum": 1,
+                "maximum": 60
+              },
+              "omemo": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "enabled": {
+                    "type": "boolean"
+                  },
+                  "profile": {
+                    "type": "string",
+                    "enum": [
+                      "legacy",
+                      "omemo2"
+                    ]
+                  },
+                  "trustMode": {
+                    "type": "string",
+                    "enum": [
+                      "tofu",
+                      "manual"
+                    ]
+                  },
+                  "deliveryPolicy": {
+                    "type": "string",
+                    "enum": [
+                      "strict-all",
+                      "trusted-devices"
+                    ],
+                    "default": "strict-all"
+                  }
+                }
+              },
               "dm": {
                 "type": "object",
                 "additionalProperties": false,
                 "properties": {
                   "sessionScope": {
                     "type": "string",
-                    "enum": ["per-user", "per-channel-peer", "per-account-channel-peer"]
+                    "enum": [
+                      "per-user",
+                      "per-channel-peer",
+                      "per-account-channel-peer"
+                    ]
                   },
                   "threadReplies": {
                     "type": "string",
-                    "enum": ["off", "inbound", "always"]
+                    "enum": [
+                      "off",
+                      "inbound",
+                      "always"
+                    ]
                   }
                 }
               },
@@ -241,10 +361,20 @@
                 "type": "object",
                 "additionalProperties": false,
                 "properties": {
-                  "enabled": { "type": "boolean" },
-                  "idleHours": { "type": "number", "minimum": 0 },
-                  "maxAgeHours": { "type": "number", "minimum": 0 },
-                  "spawnSessions": { "type": "boolean" }
+                  "enabled": {
+                    "type": "boolean"
+                  },
+                  "idleHours": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "maxAgeHours": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "spawnSessions": {
+                    "type": "boolean"
+                  }
                 }
               }
             }

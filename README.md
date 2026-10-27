@@ -10,8 +10,10 @@ The canonical source repository is
 is a clearly labelled one-way GitHub mirror that points back to SDF as the
 source of truth. Eric is the initial maintainer.
 
-This project is pre-release. Version `0.1.2-beta.2` is available through
-ClawHub for explicit beta testing; there is no stable/default release yet.
+This project is pre-release. The source tree is `0.1.2-beta.6`, including
+opt-in legacy OMEMO, trusted-device delivery and a stale-parser crash guard.
+The latest published ClawHub package is still `0.1.2-beta.2`; there is no
+stable/default release yet. Source updates do not publish a package release.
 Install the reviewed beta explicitly with:
 
 ```bash
@@ -42,8 +44,10 @@ The durable project goal, status, decisions, and roadmap are maintained in
   `filePath`; captions are sent immediately before a URL-only XEP-0428
   fallback media stanza so Conversations renders supported files inline
 
-MUC/group chats, OMEMO, reactions, edits, retractions, and inbound file
-downloads are not supported in the initial release.
+MUC/group chats, reactions, edits, retractions, and inbound file downloads
+are not supported. The published beta.2 has no OMEMO support. Current source
+provides explicitly opt-in legacy OMEMO with manual trust controls; OMEMO 2
+has no independent live-client interoperability proof and is experimental.
 
 ## Development
 
@@ -177,6 +181,89 @@ Automatic `daily` or `idle` reset policies are optional operator choices and
 can cause a later follow-up to start a fresh transcript generation. Check the
 session documentation for the OpenClaw version you deploy rather than assuming
 a fixed clock boundary across releases.
+
+### Opt-in OMEMO operator lifecycle
+
+The source tree contains an explicitly opt-in OMEMO implementation. It remains
+disabled by default and is not a claim of general OMEMO 2 interoperability.
+When an approved test or private activation enables it, the Gateway owner can
+use `/xmpp-omemo` to review and change trust without editing SQLite state:
+
+```text
+/xmpp-omemo list <account>
+/xmpp-omemo trust <account> <jid.device> <expected-state> <fingerprint> <next-state>
+/xmpp-omemo replace <account> <jid.device> <expected-state> <old-fingerprint> <new-fingerprint> <next-state>
+/xmpp-omemo retire-device <account> <legacy|omemo2> <local-device-id>
+/xmpp-omemo activate-device <account> <legacy|omemo2> <local-device-id>
+```
+
+Fingerprints printed by `list` are copy-safe 64-character hexadecimal values.
+Every mutation compares the reviewed prior state and fingerprint. Identity
+replacement additionally requires the exact newly observed fingerprint and
+removes the old ratchet in the same local transaction.
+
+Device retirement writes a durable local marker before changing PEP, removes
+only the exact local device from the conflict-aware device list, and then
+retracts its bundle. An interrupted retirement is completed before presence on
+restart. While retired, reconnect cannot republish the device and encrypted
+sends fail closed. Local keys remain available for rollback; `activate-device`
+publishes the exact retained bundle before clearing the marker. Production
+configuration changes, Gateway restarts, and activation remain separate
+operator decisions.
+
+With `trustMode: "manual"`, a first inbound encrypted stanza is rejected in
+the same transaction that would otherwise change ratchet state. If no trust
+record exists yet, make one outbound encrypted attempt to that peer first; it
+resolves the advertised bundle and records the fingerprint as `undecided`
+without sending plaintext. Review that fingerprint independently, apply the
+exact compare-and-set `trust` command, then retry encrypted traffic.
+
+### Multi-device delivery and review
+
+Existing configurations retain `omemo.deliveryPolicy: "strict-all"`. To allow
+trusted devices to keep receiving when a new device appears, explicitly set
+`channels.xmpp.omemo.deliveryPolicy` (or the account's `omemo.deliveryPolicy`)
+to `"trusted-devices"`. Keep the existing profile and trust mode. This excludes
+undecided, distrusted, retired and missing-bundle devices; at least one device
+of the actual recipient must remain trusted/verified. Changed keys, corrupt
+records and encryption failures still block delivery. There is no plaintext
+fallback. `trustMode: "tofu"` is a separate first-use choice, not verification,
+and does not approve an existing undecided record.
+
+Delivery status exposes `deliveryState`, `lastDeliveryError`,
+`lastDeliveryFailureAt`, `excludedDeviceCount` and `pendingDeviceCount`.
+Counts describe the most recent send attempt, not a complete account inventory.
+A successful ping does not clear a delivery error. A successful encrypted send
+clears the error and reports healthy or degraded according to excluded devices.
+Rate-limited notices are inside the encrypted reply, never its outer body.
+
+On an authenticated non-XMPP owner channel:
+
+```text
+/xmpp-omemo review <account>
+/xmpp-omemo approve <account> <review-code>
+```
+
+Review displays full fingerprints and ready-to-use approval commands. Only
+approve a device you recognise. Approval sets `trusted`, not `verified`; keep
+using the exact fingerprint command after independent comparison for verified
+trust. Review codes expire after ten minutes, are single-use, bound to the
+reviewer/account/key/state, and invalidated by refreshed reviews or restart.
+Changed keys require the existing explicit replacement workflow.
+
+Authenticated admin clients can call `xmpp.omemo.review` with `{ "accountId":
+"default" }`, then `xmpp.omemo.approve` with `{ "accountId": "default", "code":
+"<returned-code>" }`. Both require an operator with `operator.admin` scope.
+Use the same authenticated user, or the same connection when the host does not
+supply an authenticated user ID. These are Gateway RPCs, not a new built-in
+Control UI page or model tools. XMPP short-code approval is deliberately
+unavailable until the host carries verified sender-device provenance.
+
+A deployment must explicitly enable the new policy. Rollback restores the
+previous package and removes the new policy field (older schemas reject it).
+Keep the OMEMO state and keys: no state migration or trust reset is needed.
+Previously failed replies were not queued and are not automatically replayed;
+send a fresh message after activation.
 
 ## Acknowledgements
 

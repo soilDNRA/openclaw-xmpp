@@ -2,6 +2,9 @@ import { createHash, randomUUID } from "node:crypto";
 import { fileURLToPath } from "node:url";
 
 import { client, xml } from "@xmpp/client";
+import { installDependencyGuards } from "./dep-guards.js";
+
+installDependencyGuards();
 import type { Client, Options as XmppClientOptions } from "@xmpp/client";
 import type { Element } from "@xmpp/xml";
 
@@ -21,6 +24,8 @@ import {
   type InboundXmppMessage,
   type SharedFileMetadata
 } from "./stanzas.js";
+import type { OmemoSession } from "./omemo/session.js";
+import type { OmemoIqCaller } from "./omemo/xmpp-pep.js";
 
 export interface XmppTransportStatus {
   connected: boolean;
@@ -31,6 +36,11 @@ export interface XmppTransportStatus {
   lastInboundAt?: number;
   lastOutboundAt?: number;
   lastError?: string | undefined;
+  deliveryState?: "healthy" | "degraded" | "blocked";
+  lastDeliveryError?: string | undefined;
+  lastDeliveryFailureAt?: number;
+  excludedDeviceCount?: number;
+  pendingDeviceCount?: number;
   reconnectAttempts?: number;
   lastReconnectedAt?: number;
   streamManagement?: "enabled" | "resumed" | "failed" | "unavailable";
@@ -71,6 +81,12 @@ export interface SentXmppMessage {
   id: string;
   to: string;
   url?: string;
+}
+
+export interface XmppTransportOptions {
+  /** Required only when the explicit account OMEMO switch is enabled. */
+  omemoSession?: OmemoSession;
+  omemoSessionFactory?: (iq: OmemoIqCaller) => OmemoSession;
 }
 
 type XmppCredentialsFactory = Extract<
@@ -148,6 +164,7 @@ export class XmppTransport {
   #stopped = false;
   #probeTimer: ReturnType<typeof setTimeout> | undefined;
   #probeInFlight = false;
+  readonly #omemoSession: OmemoSession | undefined;
   readonly #onReconnecting = () => {
     this.#clearProbeTimer();
     this.#updateStatus({
@@ -160,6 +177,21 @@ export class XmppTransport {
     this.#updateStatus({ lastReconnectedAt: Date.now() });
   };
   readonly #onResumed = () => {
+    if (this.#omemoSession) {
+      this.#updateStatus({ connected: false, phase: "starting", streamManagement: "resumed" });
+      void this.#omemoSession.resume(this.#omemoIo()).then(() => {
+        this.#finishResume();
+      }).catch(async (error) => {
+        const message = `OMEMO recovery after stream resume failed: ${errorText(error, this.config.password)}`;
+        this.#updateStatus({ connected: false, phase: "failed", lastError: message });
+        this.handlers.log.error(`[${this.config.accountId}] ${message}`);
+        await this.#xmpp.stop().catch(() => undefined);
+      });
+      return;
+    }
+    this.#finishResume();
+  };
+  readonly #finishResume = () => {
     this.#updateStatus({
       connected: true,
       phase: "online",
@@ -175,8 +207,17 @@ export class XmppTransport {
 
   constructor(
     readonly config: XmppConnectionConfig,
-    private readonly handlers: XmppTransportHandlers
+    private readonly handlers: XmppTransportHandlers,
+    private readonly options: XmppTransportOptions = {}
   ) {
+    if (options.omemoSession && options.omemoSessionFactory) {
+      throw new Error("Provide either an OMEMO session or an OMEMO session factory, not both.");
+    }
+    if (Boolean(config.omemo?.enabled) !== Boolean(options.omemoSession || options.omemoSessionFactory)) {
+      throw new Error(config.omemo?.enabled
+        ? "XMPP OMEMO is enabled but no assembled OMEMO session was provided."
+        : "An OMEMO session was provided while XMPP OMEMO is disabled.");
+    }
     this.#xmpp = client({
       service: config.service,
       domain: config.domain,
@@ -185,6 +226,14 @@ export class XmppTransport {
       timeout: 15_000
     });
     const extensions = this.#extensions();
+    this.#omemoSession = options.omemoSession ?? (
+      options.omemoSessionFactory && extensions.iqCaller
+        ? options.omemoSessionFactory(extensions.iqCaller)
+        : undefined
+    );
+    if (options.omemoSessionFactory && !this.#omemoSession) {
+      throw new Error("XMPP OMEMO requires the IQ caller extension.");
+    }
     if (extensions.reconnect) {
       extensions.reconnect.delay = config.reconnectDelayMs;
       extensions.reconnect.on("reconnecting", this.#onReconnecting);
@@ -226,6 +275,17 @@ export class XmppTransport {
         lastError: undefined
       });
       handlers.log.info(`[${config.accountId}] XMPP connected as ${boundJid}`);
+      if (this.#omemoSession) {
+        try {
+          await this.#omemoSession.initialize(this.#omemoIo());
+        } catch (error) {
+          const message = `OMEMO initialization failed: ${errorText(error, config.password)}`;
+          this.#updateStatus({ connected: false, phase: "failed", lastError: message });
+          handlers.log.error(`[${config.accountId}] ${message}`);
+          await this.#xmpp.stop().catch(() => undefined);
+          return;
+        }
+      }
       await this.#xmpp.send(xml("presence"));
       this.#scheduleProbe();
     });
@@ -245,6 +305,10 @@ export class XmppTransport {
 
   get status(): XmppTransportStatus {
     return { ...this.#status };
+  }
+
+  get omemoSession(): OmemoSession | undefined {
+    return this.#omemoSession;
   }
 
   async run(signal: AbortSignal): Promise<void> {
@@ -289,6 +353,7 @@ export class XmppTransport {
     extensions.streamManagement?.removeListener("resumed", this.#onResumed);
     extensions.streamManagement?.removeListener("fail", this.#onStreamManagementFail);
     await this.#xmpp.stop().catch(() => undefined);
+    this.#omemoSession?.close();
     this.#updateStatus({
       connected: false,
       phase: "stopped",
@@ -365,6 +430,29 @@ export class XmppTransport {
     } = {}
   ): Promise<SentXmppMessage> {
     this.#assertConnected();
+    if (this.#omemoSession) {
+      if (options.oobUrl || options.sharedFile) {
+        throw new Error("OMEMO media messages are not implemented; plaintext fallback is forbidden.");
+      }
+      try {
+        const id = await this.#omemoSession.sendText(to, text);
+        const excluded = this.#omemoSession.excludedDevices ?? [];
+        this.#updateStatus({ lastOutboundAt: Date.now(),
+          deliveryState: excluded.length ? "degraded" : "healthy",
+          excludedDeviceCount: excluded.length,
+          pendingDeviceCount: excluded.filter((item) => item.reason === "undecided").length,
+          lastDeliveryError: undefined });
+        return { id, to };
+      } catch (error) {
+        const excluded = this.#omemoSession.excludedDevices ?? [];
+        this.#updateStatus({ deliveryState: "blocked", lastDeliveryFailureAt: Date.now(),
+          excludedDeviceCount: excluded.length,
+          pendingDeviceCount: excluded.filter((item) => item.reason === "undecided").length,
+          lastDeliveryError: errorText(error, this.config.password) });
+        await this.sendChatState(to, "active").catch(() => undefined);
+        throw error;
+      }
+    }
     const built = buildTextMessage({
       to,
       text,
@@ -401,6 +489,9 @@ export class XmppTransport {
   }
 
   async sendMedia(input: SendMediaInput): Promise<SentXmppMessage> {
+    if (this.#omemoSession) {
+      throw new Error("OMEMO media messages are not implemented; plaintext fallback is forbidden.");
+    }
     const localPath = localPathFromMediaUrl(input.mediaUrl);
     if (!localPath) {
       const url = new URL(input.mediaUrl);
@@ -484,6 +575,10 @@ export class XmppTransport {
 
   async #handleStanza(stanza: Element): Promise<void> {
     try {
+      if (this.#omemoSession && await this.#omemoSession.handleStanza(stanza)) {
+        this.#updateStatus({ lastInboundAt: Date.now() });
+        return;
+      }
       const message = parseInboundMessage(stanza, this.config.jid);
       if (!message) {
         return;
@@ -517,6 +612,19 @@ export class XmppTransport {
 
   #extensions(): XmppClientExtensions {
     return this.#xmpp as unknown as XmppClientExtensions;
+  }
+
+  #omemoIo() {
+    return {
+      send: async (stanza: Element) => await this.#xmpp.send(stanza),
+      dispatch: async (message: { id: string; from: string; text: string }) => await this.handlers.onMessage({
+        id: message.id,
+        from: message.from,
+        fromBare: message.from,
+        body: message.text,
+        receiptRequested: false
+      })
+    };
   }
 
   #recordProbe(

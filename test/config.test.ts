@@ -32,7 +32,8 @@ describe("XMPP account configuration", () => {
       jid: "bot@example.org",
       configured: true,
       dmPolicy: "allowlist",
-      allowFrom: ["alice@example.org"]
+      allowFrom: ["alice@example.org"],
+      omemo: { enabled: false, profile: "legacy", trustMode: "manual" }
     });
     const connection = await resolveXmppConnectionConfig(cfg);
     expect(connection).toMatchObject({
@@ -41,6 +42,15 @@ describe("XMPP account configuration", () => {
       password: "secret",
       service: "example.org"
     });
+  });
+
+  it("enables OMEMO only through an explicit bounded account policy", async () => {
+    const cfg = { channels: { xmpp: {
+      jid: "bot@example.org", password: "secret",
+      omemo: { enabled: true, profile: "omemo2", trustMode: "tofu" }
+    } } } as unknown as OpenClawConfig;
+    expect(resolveXmppAccount(cfg).omemo).toEqual({ enabled: true, profile: "omemo2", trustMode: "tofu", deliveryPolicy: "strict-all" });
+    expect((await resolveXmppConnectionConfig(cfg)).omemo).toEqual({ enabled: true, profile: "omemo2", trustMode: "tofu", deliveryPolicy: "strict-all" });
   });
 
   it("supports named accounts and a configured default", () => {

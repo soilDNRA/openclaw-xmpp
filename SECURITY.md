@@ -2,8 +2,8 @@
 
 ## Supported versions
 
-Public prerelease source is available, but there is no installable package or
-stable release yet. The current `0.1.x` prerelease requires OpenClaw 2026.8.2
+The published ClawHub package is `0.1.2-beta.2`; current source is
+`0.1.2-beta.6`. There is no stable release. The current `0.1.x` prerelease requires OpenClaw 2026.8.2
 or newer and Node.js 22.22.3 or newer. Security fixes are made on the latest
 prerelease source only.
 
@@ -46,5 +46,13 @@ private network or filesystem resources. Redact secrets and personal data.
 Public reports are appropriate for ordinary bugs only after removing private
 data and confirming that the report does not describe a security weakness.
 
-OMEMO is not currently implemented. Message bodies are protected in transit by
-TLS but are not end-to-end encrypted by this plugin.
+OMEMO is not included in the published beta.2. In that package, message bodies
+are protected in transit by TLS, not end-to-end encrypted by this plugin.
+Current source includes off-by-default legacy OMEMO with manual fingerprint
+review, explicit device trust, transactional state and no plaintext fallback.
+The default delivery policy is `strict-all`; `trusted-devices` is an explicit
+operator choice and does not approve unknown identities. OMEMO 2 remains
+experimental without independent live-client interoperability evidence.
+The implementation uses a pinned, reproducibly
+rebuilt project fork of `libomemo.js`; it never silently falls back from an
+OMEMO-required conversation to plaintext.

@@ -34,6 +34,22 @@ describe("OpenClaw plugin contract", () => {
     expect(xmppPlugin.outbound?.textChunkLimit).toBe(DEFAULT_TEXT_CHUNK_LIMIT);
   });
 
+  it("registers the owner-gated OMEMO operator command with the full runtime", () => {
+    const registerChannel = vi.fn();
+    const registerCommand = vi.fn();
+    const registerGatewayMethod = vi.fn();
+    pluginEntry.register({ registrationMode: "full", registerChannel, registerCommand, registerGatewayMethod } as never);
+    expect(registerChannel).toHaveBeenCalledWith({ plugin: xmppPlugin });
+    expect(registerGatewayMethod).toHaveBeenCalledWith("xmpp.omemo.review", expect.any(Function), { scope: "operator.admin" });
+    expect(registerGatewayMethod).toHaveBeenCalledWith("xmpp.omemo.approve", expect.any(Function), { scope: "operator.admin" });
+    expect(registerCommand).toHaveBeenCalledWith(expect.objectContaining({
+      name: "xmpp-omemo",
+      requireAuth: true,
+      requiredScopes: ["operator.admin"],
+      exposeSenderIsOwner: true
+    }));
+  });
+
   it("provides the chunker required by OpenClaw's message delivery path", () => {
     const chunker = xmppPlugin.outbound?.chunker;
     expect(chunker).toBeTypeOf("function");
@@ -128,12 +144,18 @@ describe("OpenClaw plugin contract", () => {
       id: string;
       channels: string[];
       activation: { onStartup: boolean };
+      doctorContract: { stateMigrations: unknown[] };
       channelConfigs: {
         xmpp: {
           schema: {
             properties: Record<string, unknown>;
             definitions: {
               account: { properties: Record<string, unknown> };
+              secretInput: {
+                anyOf: Array<{
+                  properties?: { source?: { enum?: string[] } };
+                }>;
+              };
             };
           };
         };
@@ -142,6 +164,11 @@ describe("OpenClaw plugin contract", () => {
     expect(manifest.id).toBe("xmpp");
     expect(manifest.channels).toEqual(["xmpp"]);
     expect(manifest.activation.onStartup).toBe(false);
+    expect(manifest.doctorContract.stateMigrations).toEqual([]);
+    expect(
+      manifest.channelConfigs.xmpp.schema.definitions.secretInput.anyOf
+        .flatMap((entry) => entry.properties?.source?.enum ?? [])
+    ).toContain("store");
     const expectedTextChunkLimitSchema = {
       type: "integer",
       minimum: 1,
@@ -154,5 +181,12 @@ describe("OpenClaw plugin contract", () => {
       manifest.channelConfigs.xmpp.schema.definitions.account.properties
         .textChunkLimit
     ).toEqual(expectedTextChunkLimitSchema);
+    expect(manifest.channelConfigs.xmpp.schema.properties.omemo).toMatchObject({
+      type: "object",
+      additionalProperties: false
+    });
+    expect(manifest.channelConfigs.xmpp.schema.definitions.account.properties.omemo).toEqual(
+      manifest.channelConfigs.xmpp.schema.properties.omemo
+    );
   });
 });

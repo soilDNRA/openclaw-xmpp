@@ -1,6 +1,6 @@
 {
   "name": "openclaw-xmpp",
-  "version": "0.1.2-beta.2",
+  "version": "0.1.2-beta.6",
   "description": "Native XMPP direct-message channel plugin for OpenClaw.",
   "keywords": [
     "openclaw",
@@ -35,7 +35,8 @@
   "dependencies": {
     "@openclaw/fs-safe": "0.5.6",
     "@xmpp/client": "0.14.0",
-    "@xmpp/xml": "0.14.0"
+    "@xmpp/xml": "0.14.0",
+    "libomemo.js": "https://github.com/soilDNRA/libomemo.js-openclaw/archive/a391ba31f376ba75c0f2dc5baedff3690354de62.tar.gz"
   },
   "peerDependencies": {
     "openclaw": ">=2026.8.2"
